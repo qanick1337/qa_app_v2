@@ -7,7 +7,7 @@ API_TOKEN = os.getenv("API_TOKEN")
 
 
 def verify_token(x_api_key: str = Header(None)):
-    print(f"DEBUG: API_TOKEN set = {API_TOKEN is not None}, len = {len(API_TOKEN or '')}")
+    print(f"DEBUG: API_TOKEN set = {API_TOKEN is not None}")
     print(f"DEBUG: received header = {x_api_key!r}")
 
     if not API_TOKEN:

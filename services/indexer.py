@@ -28,7 +28,7 @@ def index_articles(articles: list[dict], source: str, conn):
             )
 
             chunks = chunk_text(article["body"])
-            print(f"[{source}] '{article['title']}' => {len(chunks)} chunks")
+            print(f"INDEX: [{source}] '{article['title']}' => {len(chunks)} chunks")
 
             for index, chunk in enumerate(chunks):
                 vector = embed(chunk)
