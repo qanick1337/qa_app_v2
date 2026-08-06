@@ -9,6 +9,7 @@ from fastapi import Depends
 
 from services.auth import verify_token
 
+from services.articles import list_all_articles
 from services.db import get_connection
 from services.indexer import index_articles
 from services.zendesk_tickets import list_tickets
@@ -51,6 +52,15 @@ class QAEvaluationRequest(BaseModel):
 @app.get("/")
 def root():
     return {"status": "ok"}
+
+
+@app.get("/articles", dependencies=[Depends(verify_token)])
+def all_articles():
+    connection = get_connection()
+    try:
+        return list_all_articles(connection)
+    finally:
+        connection.close()
 
 
 @app.get("/zendesk/articles/{article_id}", dependencies=[Depends(verify_token)])

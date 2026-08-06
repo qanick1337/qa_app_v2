@@ -13,7 +13,6 @@ if str(PROJECT_ROOT) not in sys.path:
 from services.chunker import chunk_text
 from services.clean_html import clean_html
 
-
 load_dotenv()
 
 CONFLUENCE_DOMAIN = os.getenv("CONFLUENCE_DOMAIN")
@@ -35,7 +34,6 @@ def fetch_confluence_page_title(page_id: str) -> str | None:
 
     except Exception:
         return None
-
 
 def fetch_confluence_page(page_id: str, parent_id: str | None = None, depth: int = 0) -> dict:
     url = f"https://{CONFLUENCE_DOMAIN}/wiki/api/v2/pages/{page_id}?body-format=storage"
@@ -71,7 +69,6 @@ def fetch_confluence_page(page_id: str, parent_id: str | None = None, depth: int
         print(f"[fetch_confluence_article] depth={depth} article_id={page_id} parent_id={parent_id}: Error: {error}")
 
     return {}
-
 
 def fetch_confluence_page_as_folder(page_id: str, article: dict | None = None, parent_id: str | None = None, depth: int = 0) -> list[dict]:
     articles = []
