@@ -143,7 +143,7 @@ def evaluate_ticket_qa(ticket_id: int, agent_ids: list[int]) -> tuple[dict, dict
         raise QAEvaluationError(f"LLM call failed for ticket {ticket_id}: {e}") from e
 
     evaluation = json.loads(response.choices[0].message.content)
-    return evaluation, preprocessing_info["sla_metrics"], OPENAI_MODEL
+    return (evaluation, preprocessing_info["sla_metrics"], OPENAI_MODEL)
 
 
 def save_qa_evaluation(conn, ticket_id: int, evaluation: dict, sla_metrics: dict, llm_model: str) -> None:

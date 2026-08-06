@@ -4,6 +4,10 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
+from fastapi import Depends
+
+from services.auth import verify_token
+
 from services.db import get_connection
 from services.indexer import index_articles
 from services.qa_evaluation import (
@@ -149,7 +153,7 @@ def root():
 #     return {"article_id": article_id, "title": article["title"], "indexed": True}
 
 
-@app.post("/qa-evaluations/{ticket_id}")
+@app.post("/qa-evaluations/{ticket_id}", dependencies=[Depends(verify_token)])
 def create_qa_evaluation(ticket_id: int, payload: QAEvaluationRequest = QAEvaluationRequest()):
     agent_ids = payload.agent_ids or DEFAULT_AGENT_IDS
     if not agent_ids:
@@ -172,7 +176,7 @@ def create_qa_evaluation(ticket_id: int, payload: QAEvaluationRequest = QAEvalua
     return {"ticket_id": ticket_id, "llm_model": llm_model, **evaluation}
 
 
-@app.get("/qa-evaluations/{ticket_id}")
+@app.get("/qa-evaluations/{ticket_id}", dependencies=[Depends(verify_token)])
 def read_qa_evaluation(ticket_id: int):
     connection = get_connection()
     try:
