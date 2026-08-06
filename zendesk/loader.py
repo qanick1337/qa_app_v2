@@ -278,7 +278,45 @@ def fetch_single_zendesk_ticket(ticket_id: int):
 
     return data
 
+def search_zendesk_tickets(
+    created_after: str | None = None,   # "YYYY-MM-DD"
+    created_before: str | None = None,  # "YYYY-MM-DD"
+    agent_ids: list[int] | None = None,
+    page: int = 1,
+    per_page: int = 100,
+) -> dict:
+    """
+    Сирий виклик Zendesk Search API. Дата і agent_ids фільтруються тут
+    (Zendesk це вміє нативно). Теги — НЕ тут, бо Search API не вміє AND
+    для різних тегів, тільки OR при повторенні одного й того ж поля.
+    Тег-фільтрація — в services/zendesk_tickets.py, поверх цих результатів.
+    """
+    query_parts = ["type:ticket"]
 
+    if created_after:
+        query_parts.append(f"created>={created_after}")
+    if created_before:
+        query_parts.append(f"created<={created_before}")
+    for agent_id in (agent_ids or []):
+        query_parts.append(f"assignee_id:{agent_id}")
+
+    url = f"https://{ZENDESK_DOMAIN}/api/v2/search.json"
+    params = {
+        "query": " ".join(query_parts),
+        "sort_by": "created_at",
+        "sort_order": "desc",
+        "page": page,
+        "per_page": per_page,
+    }
+
+    with httpx.Client() as client:
+        response = client.get(
+            url,
+            params=params,
+            auth=(f"{ZENDESK_EMAIL}/token", ZENDESK_TOKEN),
+        )
+        response.raise_for_status()
+        return response.json()
 
 
 def to_json(dictionary, filename):

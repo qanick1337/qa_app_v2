@@ -1,4 +1,5 @@
 import os
+import httpx
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
@@ -10,6 +11,7 @@ from services.auth import verify_token
 
 from services.db import get_connection
 from services.indexer import index_articles
+from services.zendesk_tickets import list_tickets
 from services.qa_evaluation import (
     QAEvaluationError,
     evaluate_ticket_qa,
@@ -211,3 +213,30 @@ def read_qa_evaluation(ticket_id: int):
         raise HTTPException(status_code=404, detail=f"No QA evaluation found for ticket {ticket_id}")
 
     return evaluation
+
+@app.get("/tickets", dependencies=[Depends(verify_token)])
+def get_tickets(
+    created_after: str | None = None,   # "2026-01-01"
+    created_before: str | None = None,  # "2026-01-31"
+    agent_ids: str | None = None,       # "364579400459,14641313455772"
+    agent_tag: str | None = None,       # "ivan_petrenko"
+    tags: str | None = None,            # "vip,escalated"
+    page: int = 1,
+):
+    parsed_agent_ids = (
+        [int(x) for x in agent_ids.split(",") if x.strip()] if agent_ids else None
+    )
+    parsed_tags = [t.strip() for t in tags.split(",") if t.strip()] if tags else None
+
+    try:
+        return list_tickets(
+            created_after=created_after,
+            created_before=created_before,
+            agent_ids=parsed_agent_ids,
+            agent_tag=agent_tag,
+            tags=parsed_tags,
+            page=page,
+            page_size=25,
+        )
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=f"Zendesk error: {e.response.text}")
