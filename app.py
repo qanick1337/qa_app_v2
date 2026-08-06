@@ -33,6 +33,8 @@ from confluence.loader import (
     fetch_confluence_folder
 )
 
+from services.stats import get_topic_stats
+
 load_dotenv()
 
 app = FastAPI(title="SUPPORT RAG API")
@@ -240,3 +242,8 @@ def get_tickets(
         )
     except httpx.HTTPStatusError as e:
         raise HTTPException(status_code=e.response.status_code, detail=f"Zendesk error: {e.response.text}")
+
+
+@app.get("/stats/topics", dependencies=[Depends(verify_token)])
+def stats_by_topic(date_from: str | None = None, date_to: str | None = None):
+    return get_topic_stats(date_from, date_to)
