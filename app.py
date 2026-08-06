@@ -136,21 +136,21 @@ def root():
 #     return {"section_id": section_id, "articles_indexed": len(articles)}
 
 
-# @app.post("/zendesk/index/article/{article_id}")
-# def index_zendesk_article(article_id: int):
-#     article = fetch_single_zendesk_article(article_id)
-#     if not article:
-#         raise HTTPException(status_code=404, detail=f"Article {article_id} not found")
+@app.post("/zendesk/index/article/{article_id}", dependencies=[Depends(verify_token)])
+def index_zendesk_article(article_id: int):
+    article = fetch_single_zendesk_article(article_id)
+    if not article:
+        raise HTTPException(status_code=404, detail=f"Article {article_id} not found")
 
-#     article["section"] = fetch_zendesk_section_name(article["section_id"])
+    article["section"] = fetch_zendesk_section_name(article["section_id"])
 
-#     connection = get_connection()
-#     try:
-#         index_articles([article], source="zendesk", conn=connection)
-#     finally:
-#         connection.close()
+    connection = get_connection()
+    try:
+        index_articles([article], source="zendesk", conn=connection)
+    finally:
+        connection.close()
 
-#     return {"article_id": article_id, "title": article["title"], "indexed": True}
+    return {"article_id": article_id, "title": article["title"], "indexed": True}
 
 
 @app.post("/qa-evaluations/{ticket_id}", dependencies=[Depends(verify_token)])
