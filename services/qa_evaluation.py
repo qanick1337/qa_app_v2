@@ -1,5 +1,6 @@
 import json
 import os
+import time
 
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -8,6 +9,7 @@ from psycopg2.extras import Json
 from services.preprocessing import ticket_preprocessing
 from services.search import search_all_issues
 from zendesk.loader import fetch_single_zendesk_ticket
+from services.log import log
 
 load_dotenv()
 
@@ -120,11 +122,28 @@ def _build_prompt(preprocessing_info: dict, knowledge_base_context: str) -> str:
 
 def evaluate_ticket_qa(ticket_id: int, agent_ids: list[int]) -> tuple[dict, dict, str]:
     """Fetch -> preprocess (+ LLM issue extraction) -> KB search. Може впасти на будь-якому з цих кроків."""
+    total_started = time.perf_counter()
+    durations_ms: dict[str, float] = {}
+
     try:
+        t0 = time.perf_counter()
         comments = fetch_single_zendesk_ticket(ticket_id)["comments"]
+        durations_ms["zendesk_fetch"] = round((time.perf_counter() - t0) * 1000)
+
+        t0 = time.perf_counter()
         preprocessing_info = ticket_preprocessing(comments, agent_ids)
+        durations_ms["preprocessing_llm"] = round((time.perf_counter() - t0) * 1000)
+
+        t0 = time.perf_counter()
         ticket_problem_chunks = search_all_issues(preprocessing_info["issues"])
+        durations_ms["kb_search"] = round((time.perf_counter() - t0) * 1000)
     except Exception as e:
+        log(
+            "qa_evaluation.preprocessing_failed",
+            ticket_id,
+            durations_ms=durations_ms,
+            error=str(e),
+        )
         raise QAEvaluationError(f"Preprocessing/search failed for ticket {ticket_id}: {e}") from e
 
     knowledge_base_context = "\n\n".join(
@@ -134,15 +153,35 @@ def evaluate_ticket_qa(ticket_id: int, agent_ids: list[int]) -> tuple[dict, dict
 
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     try:
+        t0 = time.perf_counter()
         response = client.chat.completions.create(
             model=OPENAI_MODEL,
+            reasoning_effort="minimal",
             messages=[{"role": "user", "content": prompt}],
             response_format={"type": "json_object"},
         )
+        durations_ms["llm_eval"] = round((time.perf_counter() - t0) * 1000)
     except Exception as e:
+        log(
+            "qa_evaluation.llm_eval_failed",
+            ticket_id,
+            durations_ms=durations_ms,
+            error=str(e),
+        )
         raise QAEvaluationError(f"LLM call failed for ticket {ticket_id}: {e}") from e
 
     evaluation = json.loads(response.choices[0].message.content)
+    durations_ms["total"] = round((time.perf_counter() - total_started) * 1000)
+
+    log(
+        "qa_evaluation.completed",
+        ticket_id,
+        llm_model=OPENAI_MODEL,
+        issue_count=len(preprocessing_info["issues"]),
+        kb_chunk_count=len(ticket_problem_chunks),
+        durations_ms=durations_ms,
+    )
+
     return (evaluation, preprocessing_info["sla_metrics"], OPENAI_MODEL)
 
 

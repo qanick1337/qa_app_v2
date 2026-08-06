@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor
+
 from services.db import get_connection
 from services.indexer import embed
 
@@ -48,11 +50,17 @@ def search_kb(query: str, top_k: int = 3, threshold: float = 0.45, section: str 
 def search_all_issues(search_queries: list[dict], top_k_per_issue: int = 3) -> list[dict]:
     all_chunks = []
     seen_article_ids = set()
-    for query in search_queries:
-        chunks = search_kb(query["search_query"], top_k=top_k_per_issue)
-        for chunk in chunks:
-            key = (chunk["title"], chunk.get("url"))
-            if key not in seen_article_ids:
-                seen_article_ids.add(key)
-                all_chunks.append(chunk)
+
+    with ThreadPoolExecutor(max_workers=len(search_queries)) as executor:
+        results = executor.map(
+            lambda query: search_kb(query["search_query"], top_k=top_k_per_issue),
+            search_queries,
+        )
+        for chunks in results:
+            for chunk in chunks:
+                key = (chunk["title"], chunk.get("url"))
+                if key not in seen_article_ids:
+                    seen_article_ids.add(key)
+                    all_chunks.append(chunk)
+
     return all_chunks

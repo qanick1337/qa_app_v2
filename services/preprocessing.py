@@ -121,7 +121,9 @@ def summarize_ticket_problem_via_llm(transcript: list[dict]) -> list[dict]:
     client = OpenAI(api_key=__import__("os").getenv("OPENAI_API_KEY"))
 
     response = client.chat.completions.create(
-        model="gpt-5-mini",
+        model="gpt-5-nano",
+        reasoning_effort="minimal",
+        service_tier="fast",
         messages=[{
             "role": "user",
             "content": (

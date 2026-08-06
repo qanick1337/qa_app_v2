@@ -188,7 +188,7 @@ def create_qa_evaluation(ticket_id: int, payload: QAEvaluationRequest = QAEvalua
         )
 
     try:
-        evaluation, sla_metrics, llm_model = evaluate_ticket_qa(ticket_id, agent_ids)
+        (evaluation, sla_metrics, llm_model) = evaluate_ticket_qa(ticket_id, agent_ids)
     except QAEvaluationError as e:
         raise HTTPException(status_code=502, detail=str(e))
 
