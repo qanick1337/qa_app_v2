@@ -278,7 +278,7 @@ def fetch_single_zendesk_ticket(ticket_id: int):
 
     return data
 
-def search_zendesk_tickets(
+def fetch_zendesk_tickets(
     created_after: str | None = None,   # "YYYY-MM-DD"
     created_before: str | None = None,  # "YYYY-MM-DD"
     agent_ids: list[int] | None = None,

@@ -1,14 +1,36 @@
-from zendesk.loader import search_zendesk_tickets
+from zendesk.loader import fetch_zendesk_tickets
 
 MAX_ZENDESK_PAGES = 10   # запобіжник, щоб дуже вузький фільтр по тегах не крутився вічно
 ZENDESK_PAGE_SIZE = 100  # скільки кандидатів тягнемо із Zendesk за один виклик
 
+zd_accounts = {
+    '9559960591388':'System',
+    '13493198853660': 'Senet Boot Chain',
+    '364579245659': '1st Support Chain',
+    '364579400459': '2rd Support Chain',
+    '368391306479': '3rd Support Chain',
+    '14641313455772': '4th Support Chain',
+    '362306322199': '5th Antonina/Olha',
+    '362750819599': '6rd Customer Succes'
+}
 
 def ticket_matches_tags(ticket: dict, required_tags: list[str]) -> bool:
     if not required_tags:
         return True
     return set(required_tags).issubset(set(ticket.get("tags", [])))
 
+def format_ticket(ticket: dict) -> dict:
+    return {
+        "id": ticket["id"],
+        "subject": ticket.get("subject"),
+        "status": ticket.get("status"),
+        "created_at": ticket.get("created_at"),
+        "updated_at": ticket.get("updated_at"),
+        "assignee_id": zd_accounts[str(ticket.get("assignee_id"))],
+        "requester_id": ticket.get("requester_id"),
+        "tags": ticket.get("tags", []),
+        "priority": ticket.get("priority"),
+    }
 
 def list_tickets(
     created_after: str | None = None,
@@ -34,7 +56,7 @@ def list_tickets(
             hit_cap = True
             break
 
-        response = search_zendesk_tickets(
+        response = fetch_zendesk_tickets(
             created_after=created_after,
             created_before=created_before,
             agent_ids=agent_ids,
@@ -55,18 +77,4 @@ def list_tickets(
         "page": page,
         "page_size": page_size,
         "has_more": len(matched) > skip + page_size or hit_cap,
-    }
-
-
-def format_ticket(ticket: dict) -> dict:
-    return {
-        "id": ticket["id"],
-        "subject": ticket.get("subject"),
-        "status": ticket.get("status"),
-        "created_at": ticket.get("created_at"),
-        "updated_at": ticket.get("updated_at"),
-        "assignee_id": ticket.get("assignee_id"),
-        "requester_id": ticket.get("requester_id"),
-        "tags": ticket.get("tags", []),
-        "priority": ticket.get("priority"),
     }

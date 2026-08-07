@@ -1,6 +1,5 @@
 from services.db import get_connection
 
-
 def get_topic_stats(date_from: str | None = None, date_to: str | None = None) -> dict:
     connection = get_connection()
     try:

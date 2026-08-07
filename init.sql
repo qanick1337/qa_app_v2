@@ -81,3 +81,10 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trg_qa_evaluations_updated_at
 BEFORE UPDATE ON qa_evaluations
 FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TABLE agent_accounts (
+    id          SERIAL PRIMARY KEY,
+    agent_id  TEXT,
+    zendesk_title   TEXT,
+);
+
