@@ -26,7 +26,7 @@ def format_ticket(ticket: dict) -> dict:
         "status": ticket.get("status"),
         "created_at": ticket.get("created_at"),
         "updated_at": ticket.get("updated_at"),
-        "assignee_id": zd_accounts[str(ticket.get("assignee_id"))],
+        "assignee_id": ticket.get("assignee_id"),
         "requester_id": ticket.get("requester_id"),
         "tags": ticket.get("tags", []),
         "priority": ticket.get("priority"),

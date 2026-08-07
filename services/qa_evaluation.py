@@ -133,8 +133,12 @@ def evaluate_ticket_qa(ticket_id: int, agent_ids: list[int]) -> tuple[dict, dict
         t0 = time.perf_counter()
         preprocessing_info = ticket_preprocessing(comments, agent_ids)
         durations_ms["preprocessing_llm"] = round((time.perf_counter() - t0) * 1000)
-        
-        print(f"DEGUG: found {len(preprocessing_info["issues"])} in the ticket")
+
+        print(f"DEGUG: found {len(preprocessing_info["issues"])} issues in the ticket")
+
+        for elem in preprocessing_info["issues"]:
+            print(f"The issue: {elem["problem"]} found")
+            print(f"The issue query: {elem["search_query"]}")
 
         t0 = time.perf_counter()
         ticket_problem_chunks = search_all_issues(preprocessing_info["issues"])

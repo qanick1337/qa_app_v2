@@ -4,7 +4,11 @@ from services.db import get_connection
 from services.indexer import embed
 
 
-def search_kb(query: str, top_k: int = 3, threshold: float = 0.45, section: str = None) -> list[dict]:
+DEFAULT_THRESHOLD = 0.45
+FALLBACK_THRESHOLD = 0.30
+
+
+def search_kb(query: str, top_k: int = 3, threshold: float = DEFAULT_THRESHOLD, section: str = None) -> list[dict]:
     try:
         query_vector = embed(query)
     except Exception as e:
@@ -47,13 +51,20 @@ def search_kb(query: str, top_k: int = 3, threshold: float = 0.45, section: str 
     ]
 
 
+def search_kb_with_fallback(query: str, top_k: int = 3, section: str = None) -> list[dict]:
+    chunks = search_kb(query, top_k=top_k, threshold=DEFAULT_THRESHOLD, section=section)
+    if not chunks:
+        chunks = search_kb(query, top_k=top_k, threshold=FALLBACK_THRESHOLD, section=section)
+    return chunks
+
+
 def search_all_issues(search_queries: list[dict], top_k_per_issue: int = 3) -> list[dict]:
     all_chunks = []
     seen_article_ids = set()
 
     with ThreadPoolExecutor(max_workers=len(search_queries)) as executor:
         results = executor.map(
-            lambda query: search_kb(query["search_query"], top_k=top_k_per_issue),
+            lambda query: search_kb_with_fallback(query["search_query"], top_k=top_k_per_issue),
             search_queries,
         )
         for chunks in results:
